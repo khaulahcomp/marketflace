@@ -28,6 +28,32 @@
   </div>
 </section>
 
+<?php if ($flash): ?>
+<section class="flash-sec" aria-labelledby="flash-title">
+  <div class="container">
+    <div class="flash-sec-head">
+      <div class="flash-sec-title">
+        <span class="flash-bolt"><?= bolt_icon(26) ?></span>
+        <div>
+          <h2 id="flash-title">Flash Sale</h2>
+          <p><?= num($flashTotal) ?> produk diskon besar. Harga normal kembali saat waktu habis.</p>
+        </div>
+      </div>
+      <div class="flash-sec-cd">
+        <span class="flash-cd-lbl">Promo terdekat berakhir dalam</span>
+        <?= countdown_html($flashLeft, 'full') ?>
+      </div>
+    </div>
+    <div class="grid">
+      <?php foreach ($flash as $p) include ROOT . '/views/partials/product_card.php'; ?>
+    </div>
+    <?php if ($flashTotal > count($flash)): ?>
+      <p class="flash-more"><a class="btn btn-light" href="<?= e(url('produk?flash=1')) ?>">Lihat semua <?= num($flashTotal) ?> produk flash sale &rarr;</a></p>
+    <?php endif; ?>
+  </div>
+</section>
+<?php endif; ?>
+
 <section class="container steps" aria-label="Cara belanja">
   <ol>
     <li><b>1</b><div><strong>Pilih produk</strong><span>Software, website, template, script, plugin.</span></div></li>

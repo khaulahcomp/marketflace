@@ -18,7 +18,7 @@
             <div><strong><?= e($p['title']) ?></strong><small><?= e(product_types()[$p['type']] ?? '') ?><?= $p['demo_url'] ? ' · ada demo' : '' ?></small></div>
           </div>
         </td>
-        <td><?= e(rupiah($p['price'])) ?></td>
+        <td class="pcell"><?= price_cell_html($p) ?></td>
         <td><?= status_badge($p['status']) ?></td>
         <td class="r"><?= num($p['views']) ?></td>
         <td class="r"><?= num($p['demo_clicks']) ?></td>

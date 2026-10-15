@@ -4,8 +4,17 @@ $cats = rows("SELECT c.*, (SELECT COUNT(*) FROM products p JOIN users u ON u.id 
               FROM categories c ORDER BY c.sort_order, c.name");
 $featured = rows(product_base_sql() . " WHERE p.status = 'published' AND p.is_featured = 1 ORDER BY p.updated_at DESC LIMIT 8");
 $latest   = rows(product_base_sql() . " WHERE p.status = 'published' ORDER BY p.created_at DESC LIMIT 12");
+$flash = [];
+$flashTotal = 0;
+$flashLeft = 0;
+if (flash_ready()) {
+    $flash = rows(product_base_sql() . " WHERE p.status = 'published' AND " . flash_active_sql() . " ORDER BY p.flash_end ASC LIMIT 8");
+    $fs = flash_summary();
+    $flashTotal = $fs ? $fs['n'] : count($flash);
+    $flashLeft  = $fs ? $fs['left'] : 0;
+}
 $stats = [
     'products' => (int)val("SELECT COUNT(*) " . product_from_sql() . " WHERE p.status = 'published'"),
     'sellers'  => (int)val("SELECT COUNT(DISTINCT p.seller_id) " . product_from_sql() . " WHERE p.status = 'published'"),
 ];
-render('home', compact('cats', 'featured', 'latest', 'stats'));
+render('home', compact('cats', 'featured', 'latest', 'stats', 'flash', 'flashTotal', 'flashLeft'));

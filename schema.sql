@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS products (
   slug VARCHAR(190) NOT NULL,
   type VARCHAR(20) NOT NULL DEFAULT 'software',
   price BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  compare_price BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  flash_price BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  flash_start DATETIME NULL,
+  flash_end DATETIME NULL,
   short_desc VARCHAR(255) NOT NULL DEFAULT '',
   description MEDIUMTEXT NULL,
   features TEXT NULL,
@@ -55,6 +59,7 @@ CREATE TABLE IF NOT EXISTS products (
   KEY idx_products_status (status, created_at),
   KEY idx_products_seller (seller_id),
   KEY idx_products_category (category_id),
+  KEY idx_products_flash (flash_end),
   CONSTRAINT fk_products_seller FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

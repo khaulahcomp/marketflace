@@ -22,7 +22,7 @@
         </div>
       </td>
       <td><?= e($p['store_name'] ?: $p['seller_name']) ?><?= $p['seller_status'] !== 'active' ? '<small>akun ' . e($p['seller_status']) . '</small>' : '' ?></td>
-      <td><?= e(rupiah($p['price'])) ?></td>
+      <td class="pcell"><?= price_cell_html($p) ?></td>
       <td><?= status_badge($p['status']) ?></td>
       <td class="r"><?= num($p['views']) ?></td>
       <td class="r"><?= num($p['wa_clicks']) ?></td>

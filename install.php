@@ -89,6 +89,7 @@ if (!$installed && $canInstall && is_post()) {
                 'allow_registration'=> '1',
                 'seller_approval'   => '0',
                 'moderate_products' => '1',
+                'schema_version'    => '2',
                 'wa_message'        => "Halo {toko}, saya tertarik dengan produk *{produk}* ({harga}) yang saya lihat di {situs}.\n\nLink: {link}\n\nApakah masih tersedia?",
             ];
             $st = $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)');

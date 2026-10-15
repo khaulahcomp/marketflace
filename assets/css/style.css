@@ -186,7 +186,7 @@ p{margin:0 0 1em}
 .field{display:grid;gap:5px;margin-bottom:16px}
 .filters .field{margin:0}
 .field label,.field>span{font-weight:600;font-size:13.5px}
-input[type=text],input[type=email],input[type=password],input[type=url],input[type=search],input[type=number],input[type=tel],input:not([type]),select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:#fff;font:inherit;color:var(--ink);min-height:42px}
+input[type=text],input[type=email],input[type=password],input[type=url],input[type=search],input[type=number],input[type=tel],input[type=datetime-local],input:not([type]),select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:#fff;font:inherit;color:var(--ink);min-height:42px}
 textarea{resize:vertical;line-height:1.5}
 input:disabled{background:var(--bg);color:var(--muted)}
 input[type=file]{font-size:13px;padding:8px;background:#fff;border:1px dashed var(--line-2);border-radius:var(--r-sm);width:100%}
@@ -355,6 +355,122 @@ a.tag:hover{border-color:var(--accent);text-decoration:none}
 .cat-row .cnt{white-space:nowrap}
 code{background:var(--bg);padding:1px 6px;border-radius:5px;font-size:.92em}
 
+/* ==========================================================
+   Diskon & Flash Sale
+   Warna merah-oranye tua agar teks putih tetap kontras tinggi;
+   kuning dipakai sebagai aksen perhatian.
+   ========================================================== */
+:root{
+  --sale-grad:linear-gradient(135deg,#c81e4a 0%,#d9361f 55%,#c2410c 100%);
+  --sale-text:#c81e4a; --sale-hi:#ffd84d; --sale-ink:#5b0f00; --sale-dark:#240a10;
+}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sm{font-size:13px}
+.opt{font-weight:500;color:var(--muted);font-size:12px;margin-left:6px}
+
+/* Blok harga (coret + harga berlaku + persen hemat) */
+.pr{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pr .row{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+.pr .was{font-size:12.5px;color:var(--muted)}
+.pr del{text-decoration-thickness:1.5px;text-decoration-color:#c81e4a}
+.pr.has-disc .price{color:var(--sale-text)}
+.save-pill{display:inline-block;background:#ffe9ee;color:#a3112f;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;line-height:1.4;white-space:nowrap}
+.pr.is-flash .save-pill{background:var(--sale-hi);color:var(--sale-ink)}
+.pr-note{display:block;color:var(--warn);font-size:12px;margin-top:4px}
+.pr-detail .price{font-size:30px;letter-spacing:-.03em}
+.pr-detail .was{font-size:15px}
+.pr-detail .save-pill{font-size:13px;padding:3px 10px}
+.buy-price{font-size:inherit;font-weight:inherit;letter-spacing:0}
+.pfoot{align-items:flex-end;flex-wrap:wrap}
+
+/* Hitung mundur */
+.cd-mini{font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:.02em}
+.cd-full{display:flex;gap:8px}
+.cd-u{min-width:58px;text-align:center;background:var(--sale-dark);color:#fff;border-radius:10px;padding:8px 6px 6px}
+.cd-u b{display:block;font-size:26px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cd-u small{display:block;margin-top:4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.82)}
+.cd.is-urgent b,.cd.is-urgent .cd-t{color:var(--sale-hi)}
+.cd.is-ended{opacity:.6}
+
+/* Kartu produk saat flash sale */
+.pcard.is-flash{border-color:#d9361f;box-shadow:0 0 0 1px #d9361f,0 14px 30px -16px rgba(200,30,74,.65)}
+.pcard.is-flash.flash-over{box-shadow:none;border-color:var(--line)}
+.sale-ribbon{position:absolute;left:0;top:34px;display:inline-flex;align-items:center;gap:4px;background:var(--sale-grad);color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;padding:5px 12px 5px 8px;border-radius:0 999px 999px 0;box-shadow:0 4px 10px -4px rgba(0,0,0,.4)}
+.disc-badge{position:absolute;right:8px;top:34px;min-width:46px;padding:6px 8px;text-align:center;border-radius:12px;background:#c81e4a;color:#fff;font-size:15px;font-weight:800;line-height:1;letter-spacing:-.02em;box-shadow:0 4px 10px -4px rgba(0,0,0,.35)}
+.pcard.is-flash .disc-badge{background:var(--sale-hi);color:var(--sale-ink)}
+.cd-strip{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;background:var(--sale-dark);color:#fff;border-radius:9px;padding:7px 10px;font-size:12px;margin-top:2px}
+.cd-lbl{display:inline-flex;align-items:center;gap:5px;color:var(--sale-hi);font-weight:700}
+.cd-strip .cd-mini{font-size:14px}
+.btn-sale{background:var(--sale-grad);color:#fff}
+.btn-sale:hover{filter:brightness(1.1)}
+
+/* Spanduk di atas semua halaman */
+.flash-bar{background:var(--sale-grad);color:#fff;font-size:13px;line-height:1.3}
+.flash-bar-in{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;padding-top:8px;padding-bottom:8px;text-align:center}
+.fb-ttl{display:inline-flex;align-items:center;gap:5px;background:var(--sale-hi);color:var(--sale-ink);font-weight:800;font-size:12px;letter-spacing:.06em;padding:2px 10px 2px 7px;border-radius:999px}
+.flash-bar .cd-mini{background:rgba(36,10,16,.55);padding:2px 9px;border-radius:7px;font-size:14px}
+.fb-link{color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.fb-link:hover{color:var(--sale-hi)}
+
+/* Bagian Flash Sale di beranda */
+.flash-sec{background:var(--sale-grad);color:#fff;padding:38px 0 64px;position:relative;overflow:hidden}
+.flash-sec::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 14px,transparent 14px 28px);pointer-events:none}
+.flash-sec .container{position:relative}
+.flash-sec-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px 28px;margin-bottom:22px}
+.flash-sec-title{display:flex;align-items:center;gap:14px}
+.flash-bolt{width:56px;height:56px;border-radius:16px;background:var(--sale-hi);color:var(--sale-ink);display:grid;place-items:center;flex:none}
+.flash-sec h2{font-size:clamp(26px,3.6vw,36px);font-weight:800;letter-spacing:-.03em;color:#fff}
+.flash-sec-title p{margin:2px 0 0;color:rgba(255,255,255,.94);font-size:14px}
+.flash-sec-cd{display:grid;gap:6px;justify-items:end}
+.flash-cd-lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.flash-sec-cd .cd-u{min-width:64px}
+.flash-more{text-align:center;margin:26px 0 0}
+
+/* Halaman produk: kotak flash sale */
+.flash-box{background:var(--sale-grad);color:#fff;border-radius:14px;padding:16px;display:grid;gap:10px;box-shadow:0 14px 30px -14px rgba(200,30,74,.7)}
+.flash-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.flash-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sale-hi);color:var(--sale-ink);font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 12px 5px 9px;border-radius:999px}
+.flash-pct{font-size:28px;font-weight:800;letter-spacing:-.03em}
+.flash-box .cd-full{gap:8px}
+.flash-box .cd-u{flex:1;min-width:0}
+.flash-box .pr{background:#fff;color:var(--ink);border-radius:10px;padding:10px 12px}
+.flash-save{margin:0;font-size:13px}
+.flash-teaser{display:grid;gap:4px;background:#fff6e0;border:1px dashed #e0a800;color:#6b4a00;border-radius:10px;padding:10px 12px;font-size:13px}
+.flash-teaser strong{display:flex;align-items:center;gap:6px;color:#8a1a00}
+.flash-teaser .cd-mini{color:#8a1a00;font-size:15px}
+
+/* Bilah beli di ponsel */
+.mb-price{flex:0 0 100%;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
+.mb-price strong{font-size:18px;letter-spacing:-.02em}
+.mb-price.is-flash strong{color:var(--sale-text)}
+.mb-price del{font-size:12.5px;margin-right:4px}
+.mb-cd{display:inline-flex;align-items:center;gap:4px;background:var(--sale-dark);color:var(--sale-hi);padding:3px 9px;border-radius:8px;font-size:13px}
+
+/* Filter & judul daftar */
+.check-sale{color:#a3112f;font-weight:700;align-items:center}
+.h-flash{display:flex;align-items:center;gap:10px;color:#a3112f}
+
+/* Form penjual */
+.sale-panel h2{display:flex;align-items:center;gap:8px}
+.sale-panel h2 svg{color:#c81e4a}
+.flash-fields{border:1px dashed var(--line-2);border-radius:12px;padding:16px;margin:4px 0 16px;background:#fffafb}
+.flash-fields h3{font-size:15px;margin-bottom:4px}
+.flash-fields .field:last-of-type{margin-bottom:10px}
+.flash-fields .row2{align-items:start}
+.quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.sale-preview{border-top:1px solid var(--line);padding-top:14px}
+.sale-preview>small{display:block;color:var(--muted);margin-bottom:6px}
+.pcell del{font-size:12.5px}
+.table td small.flash-tag{display:inline-flex;align-items:center;gap:4px;margin-top:2px;color:#7c5a00}
+.flash-tag.is-on{color:#a3112f;font-weight:700}
+
+@media (prefers-reduced-motion:no-preference){
+  @keyframes bolt-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+  @keyframes urgent-pulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .flash-bolt svg,.flash-badge svg,.fb-ttl svg,.sale-ribbon svg{animation:bolt-pulse 1.4s ease-in-out infinite}
+  .cd.is-urgent{animation:urgent-pulse 1s ease-in-out infinite}
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width:1080px){
   .grid{grid-template-columns:repeat(3,1fr)}
@@ -414,3 +530,20 @@ code{background:var(--bg);padding:1px 6px;border-radius:5px;font-size:.92em}
   .grid,.grid-3{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* ---------- Responsive: diskon & flash sale ---------- */
+@media (max-width:900px){
+  .mobile-bar{flex-wrap:wrap}
+  body:has(.mobile-bar.has-price){padding-bottom:118px}
+  .flash-sec-cd{justify-items:start}
+}
+@media (max-width:620px){
+  .flash-sec{padding:28px 0 56px}
+  .flash-sec-cd{width:100%}
+  .flash-sec-cd .cd-full{width:100%}
+  .flash-sec-cd .cd-u{flex:1;min-width:0}
+  .cd-u b{font-size:22px}
+  .disc-badge{font-size:13px;min-width:40px;padding:5px 6px}
+  .sale-ribbon{font-size:10px;padding:4px 10px 4px 7px}
+  .flash-bar-in{font-size:12.5px}
+}

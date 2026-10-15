@@ -418,6 +418,172 @@ function pagination_html(array $pg): string
     return $h . '</nav>';
 }
 
+/* ---------- Harga coret, diskon & flash sale ---------- */
+
+/** Ambil angka rupiah dari input bebas ("1.500.000" -> 1500000). */
+function money_int($v): int
+{
+    $d = preg_replace('/\D/', '', (string)$v);
+    return (int)substr($d === '' ? '0' : $d, 0, 12);
+}
+
+/** Ubah isian datetime-local ("2026-10-15T20:00") menjadi "Y-m-d H:i:s" (WIB). Null bila kosong/tidak valid. */
+function parse_local_dt(string $s): ?string
+{
+    $s = trim($s);
+    if ($s === '') return null;
+    $tz = new DateTimeZone('Asia/Jakarta');
+    foreach (['Y-m-d\TH:i', 'Y-m-d H:i', 'Y-m-d\TH:i:s', 'Y-m-d H:i:s'] as $fmt) {
+        $d = DateTime::createFromFormat($fmt, $s, $tz);
+        $e = DateTime::getLastErrors();
+        if ($d && (!$e || ($e['warning_count'] == 0 && $e['error_count'] == 0))) {
+            return $d->format('Y-m-d H:i:s');
+        }
+    }
+    return null;
+}
+
+/** "Y-m-d H:i:s" -> nilai untuk input datetime-local. */
+function dt_local_value($s): string
+{
+    $t = $s ? strtotime((string)$s) : 0;
+    return $t ? date('Y-m-d\TH:i', $t) : '';
+}
+
+/**
+ * Hitung tampilan harga sebuah produk.
+ * Return: state (none|upcoming|active), current (harga berlaku), strike (harga coret, 0 bila tidak ada),
+ *         pct (persen diskon), save (nominal hemat), left (detik menuju berakhir/mulai), flash_price.
+ * Harga coret hanya nominal: persen dihitung otomatis dari selisihnya.
+ */
+function price_info(array $p, ?int $now = null): array
+{
+    $now     = $now ?? time();
+    $price   = (int)($p['price'] ?? 0);
+    $compare = (int)($p['compare_price'] ?? 0);
+    $fp      = (int)($p['flash_price'] ?? 0);
+    $fs      = !empty($p['flash_start']) ? (int)strtotime((string)$p['flash_start']) : 0;
+    $fe      = !empty($p['flash_end']) ? (int)strtotime((string)$p['flash_end']) : 0;
+
+    $state = 'none';
+    $left  = 0;
+    if ($price > 0 && $fp > 0 && $fp < $price && $fe > $now) {
+        if ($fs > $now) {
+            $state = 'upcoming';
+            $left  = $fs - $now;
+        } else {
+            $state = 'active';
+            $left  = $fe - $now;
+        }
+    }
+
+    $current = $state === 'active' ? $fp : $price;
+    $strike  = 0;
+    if ($state === 'active') {
+        $strike = $compare > $fp ? $compare : $price;
+    } elseif ($price > 0 && $compare > $price) {
+        $strike = $compare;
+    }
+    $pct = ($strike > $current && $current > 0) ? min(99, max(1, (int)round(($strike - $current) / $strike * 100))) : 0;
+
+    return [
+        'state'       => $state,
+        'current'     => $current,
+        'strike'      => $strike > $current ? $strike : 0,
+        'pct'         => $pct,
+        'save'        => $strike > $current ? $strike - $current : 0,
+        'left'        => max(0, $left),
+        'flash_price' => $fp,
+        'start_ts'    => $fs,
+        'end_ts'      => $fe,
+    ];
+}
+
+/** Format sisa waktu awal (server) "2h 03:04:05" / "03:04:05". JS memperbaruinya tiap detik. */
+function countdown_text(int $sec): string
+{
+    $sec = max(0, $sec);
+    $d = intdiv($sec, 86400);
+    $h = intdiv($sec % 86400, 3600);
+    $m = intdiv($sec % 3600, 60);
+    $s = $sec % 60;
+    return ($d > 0 ? $d . 'h ' : '') . sprintf('%02d:%02d:%02d', $h, $m, $s);
+}
+
+/**
+ * Hitung mundur. mode "mini" = satu baris teks; mode "full" = kotak Hari/Jam/Menit/Detik.
+ * Nilai awal dari server (data-left, detik); app.js menghitung mundur di browser.
+ */
+function countdown_html(int $sec, string $mode = 'mini', string $label = 'Berakhir dalam'): string
+{
+    $sec = max(0, $sec);
+    $aria = $label;   // tanpa angka: nilainya berubah tiap detik, jadi label statis agar tidak usang
+    if ($mode === 'full') {
+        $d = intdiv($sec, 86400);
+        $h = intdiv($sec % 86400, 3600);
+        $m = intdiv($sec % 3600, 60);
+        $s = $sec % 60;
+        $u = function ($k, $v, $name) {
+            return '<div class="cd-u"><b data-u="' . $k . '">' . sprintf('%02d', $v) . '</b><small>' . $name . '</small></div>';
+        };
+        return '<div class="cd cd-full" role="timer" aria-label="' . e($aria) . '" data-left="' . $sec . '" data-mode="full">'
+            . $u('d', $d, 'Hari') . $u('h', $h, 'Jam') . $u('m', $m, 'Menit') . $u('s', $s, 'Detik') . '</div>';
+    }
+    return '<span class="cd cd-mini" role="timer" aria-label="' . e($aria) . '" data-left="' . $sec . '" data-mode="mini"><span class="cd-t">' . e(countdown_text($sec)) . '</span></span>';
+}
+
+/**
+ * Blok harga: harga berlaku, harga coret, persen diskon.
+ * $size: "card" (kartu produk) atau "detail" (halaman produk).
+ */
+function price_html(array $p, string $size = 'card'): string
+{
+    $pi = price_info($p);
+    $cls = 'pr pr-' . $size . ($pi['state'] === 'active' ? ' is-flash' : '') . ($pi['pct'] > 0 ? ' has-disc' : '');
+    $h = '<div class="' . $cls . '">';
+    if ($pi['strike'] > 0) {
+        $h .= '<span class="was"><span class="sr">Harga normal </span><del>' . e(rupiah($pi['strike'])) . '</del></span>';
+    }
+    $h .= '<span class="row"><strong class="price now">' . e(rupiah($pi['current'])) . '</strong>';
+    if ($pi['pct'] > 0) {
+        $h .= '<span class="save-pill" title="Hemat ' . e(rupiah($pi['save'])) . '">Hemat ' . $pi['pct'] . '%</span>';
+    }
+    $h .= '</span></div>';
+    return $h;
+}
+
+/** Sel harga ringkas untuk tabel dashboard/admin, menandai flash sale aktif atau terjadwal. */
+function price_cell_html(array $p): string
+{
+    $pi = price_info($p);
+    $h = '<strong>' . e(rupiah($pi['current'])) . '</strong>';
+    if ($pi['strike'] > 0) {
+        $h .= ' <del class="muted">' . e(rupiah($pi['strike'])) . '</del>';
+    }
+    if ($pi['state'] === 'active') {
+        $h .= '<small class="flash-tag is-on">' . bolt_icon(11) . ' Flash sale aktif · ' . countdown_html($pi['left'], 'mini', 'Berakhir dalam') . '</small>';
+    } elseif ($pi['state'] === 'upcoming') {
+        $h .= '<small class="flash-tag">' . bolt_icon(11) . ' Flash sale mulai ' . e(fdate($p['flash_start'], true)) . '</small>';
+    } elseif (!empty($p['flash_end']) && (int)($p['flash_price'] ?? 0) > 0) {
+        $h .= '<small class="muted">Flash sale telah berakhir</small>';
+    }
+    return $h;
+}
+
+/** Teks harga untuk pesan WhatsApp: harga berlaku, dengan keterangan bila sedang diskon. */
+function price_text(array $p): string
+{
+    $pi = price_info($p);
+    $t = rupiah($pi['current']);
+    // Tanpa tanda kurung: template pesan bawaan sudah membungkus {harga} dengan kurung.
+    if ($pi['state'] === 'active') {
+        $t .= ' - promo Flash Sale, harga normal ' . rupiah($pi['strike']);
+    } elseif ($pi['pct'] > 0) {
+        $t .= ' - diskon ' . $pi['pct'] . '%, harga normal ' . rupiah($pi['strike']);
+    }
+    return $t;
+}
+
 /* ---------- Ikon SVG & potongan UI ---------- */
 
 function wa_icon(int $size = 18): string
@@ -428,6 +594,11 @@ function wa_icon(int $size = 18): string
 function ico_demo(int $size = 16): string
 {
     return '<svg class="ico" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/><path d="M10 13l3 1.5-3 1.5z" fill="currentColor"/></svg>';
+}
+
+function bolt_icon(int $size = 14): string
+{
+    return '<svg class="ico" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 2 4 13.5h6.2L9 22l10-12.2h-6.4L13.5 2Z"/></svg>';
 }
 
 function logo_mark(int $size = 26): string
@@ -475,7 +646,7 @@ function wa_message(array $p): string
     return strtr($tpl, [
         '{toko}'   => $p['store_name'] !== '' ? $p['store_name'] : $p['seller_name'],
         '{produk}' => $p['title'],
-        '{harga}'  => rupiah($p['price']),
+        '{harga}'  => price_text($p),
         '{situs}'  => setting('site_name', 'Marketplace'),
         '{link}'   => abs_url('produk/' . $p['slug']),
     ]);

@@ -1,11 +1,21 @@
 <?php
-$title = $catRow ? $catRow['name'] : ($q !== '' ? 'Hasil pencarian: ' . $q : 'Semua produk');
-$noindex = ($q !== '' || $pg['page'] > 1);
+$title = !empty($flashOnly) ? 'Flash Sale' : ($catRow ? $catRow['name'] : ($q !== '' ? 'Hasil pencarian: ' . $q : 'Semua produk'));
+$noindex = ($q !== '' || $pg['page'] > 1 || !empty($flashOnly));
 ?>
 <div class="container section">
   <div class="sec-head">
     <div>
-      <h1 class="h-page"><?= $catRow ? e($catRow['icon'] . ' ' . $catRow['name']) : ($q !== '' ? 'Hasil untuk “' . e($q) . '”' : 'Semua produk') ?></h1>
+      <h1 class="h-page<?= !empty($flashOnly) ? ' h-flash' : '' ?>"><?php
+        if (!empty($flashOnly)) {
+            echo bolt_icon(26) . ' Flash Sale';
+        } elseif ($catRow) {
+            echo e($catRow['icon'] . ' ' . $catRow['name']);
+        } elseif ($q !== '') {
+            echo 'Hasil untuk “' . e($q) . '”';
+        } else {
+            echo 'Semua produk';
+        }
+      ?></h1>
       <p class="muted"><?= num($total) ?> produk ditemukan</p>
     </div>
   </div>
@@ -16,7 +26,9 @@ $noindex = ($q !== '' || $pg['page'] > 1);
       <div class="field">
         <label for="f-sort">Urutkan</label>
         <select id="f-sort" name="sort">
-          <?php foreach (['terbaru' => 'Terbaru', 'populer' => 'Terpopuler', 'termurah' => 'Harga terendah', 'termahal' => 'Harga tertinggi'] as $k => $l): ?>
+          <?php $sortOpts = ['terbaru' => 'Terbaru', 'populer' => 'Terpopuler', 'termurah' => 'Harga terendah', 'termahal' => 'Harga tertinggi'];
+          if (!empty($flashOnly)) $sortOpts = ['berakhir' => 'Segera berakhir'] + $sortOpts;
+          foreach ($sortOpts as $k => $l): ?>
             <option value="<?= e($k) ?>" <?= $sort === $k ? 'selected' : '' ?>><?= e($l) ?></option>
           <?php endforeach; ?>
         </select>
@@ -49,6 +61,9 @@ $noindex = ($q !== '' || $pg['page'] > 1);
         </div>
       </div>
       <label class="check"><input type="checkbox" name="demo" value="1" <?= $demo ? 'checked' : '' ?>> Hanya yang ada demo</label>
+      <?php if (flash_ready()): ?>
+      <label class="check check-sale"><input type="checkbox" name="flash" value="1" <?= !empty($flashOnly) ? 'checked' : '' ?>> <?= bolt_icon(13) ?> Hanya flash sale</label>
+      <?php endif; ?>
       <button class="btn btn-primary" type="submit">Terapkan</button>
       <a class="btn btn-ghost" href="<?= e($catRow ? url('kategori/' . $catRow['slug']) : url('produk')) ?>">Reset</a>
     </form>

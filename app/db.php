@@ -88,6 +88,74 @@ function set_setting(string $key, string $value): void
     q('INSERT INTO settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)', [$key, $value]);
 }
 
+/* ---------- Migrasi skema otomatis (instalasi lama) ---------- */
+
+/**
+ * Menambah kolom harga coret & flash sale pada instalasi lama (sekali saja, lalu
+ * versi skema dicatat di tabel settings). Return true bila kolom siap dipakai.
+ */
+function flash_ready(): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+    if ((int)setting('schema_version', 0) >= 2) {
+        return $ok = true;
+    }
+    try {
+        $cols = array_column(rows('SHOW COLUMNS FROM products'), 'Field');
+        $add = [];
+        if (!in_array('compare_price', $cols, true)) $add[] = 'ADD COLUMN compare_price BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER price';
+        if (!in_array('flash_price', $cols, true))   $add[] = 'ADD COLUMN flash_price BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER compare_price';
+        if (!in_array('flash_start', $cols, true))   $add[] = 'ADD COLUMN flash_start DATETIME NULL AFTER flash_price';
+        if (!in_array('flash_end', $cols, true))     $add[] = 'ADD COLUMN flash_end DATETIME NULL AFTER flash_start';
+        if ($add) {
+            db()->exec('ALTER TABLE products ' . implode(', ', $add));
+        }
+        $idx = rows("SHOW INDEX FROM products WHERE Key_name = 'idx_products_flash'");
+        if (!$idx) {
+            db()->exec('ALTER TABLE products ADD KEY idx_products_flash (flash_end)');
+        }
+        set_setting('schema_version', '2');
+        return $ok = true;
+    } catch (Throwable $e) {
+        error_log('[' . date('c') . '] Migrasi flash sale gagal: ' . $e->getMessage());
+        return $ok = false;
+    }
+}
+
+/* ---------- Flash sale & harga efektif ---------- */
+
+/** Kondisi SQL: flash sale sedang berlangsung. Waktu memakai jam PHP (WIB) agar konsisten dengan data tersimpan. */
+function flash_active_sql(): string
+{
+    $now = "'" . date('Y-m-d H:i:s') . "'";
+    return "(p.flash_price > 0 AND p.price > p.flash_price AND p.flash_end > $now AND (p.flash_start IS NULL OR p.flash_start <= $now))";
+}
+
+/** Ekspresi SQL harga yang berlaku saat ini (harga flash bila aktif, jika tidak harga normal). */
+function eff_price_sql(): string
+{
+    return flash_ready() ? '(CASE WHEN ' . flash_active_sql() . ' THEN p.flash_price ELSE p.price END)' : 'p.price';
+}
+
+/** Ringkasan flash sale aktif untuk spanduk situs: jumlah produk dan detik tersisa hingga yang paling dulu berakhir. */
+function flash_summary(): ?array
+{
+    static $s = false;
+    if ($s === false) {
+        $s = null;
+        if (flash_ready()) {
+            $r = row('SELECT COUNT(*) AS n, MIN(p.flash_end) AS soon ' . product_from_sql() . " WHERE p.status = 'published' AND " . flash_active_sql());
+            if ($r && (int)$r['n'] > 0 && !empty($r['soon'])) {
+                $s = ['n' => (int)$r['n'], 'left' => max(0, strtotime($r['soon']) - time())];
+            }
+        }
+    }
+    return $s;
+}
+
 /* ---------- Produk ---------- */
 
 function product_from_sql(): string

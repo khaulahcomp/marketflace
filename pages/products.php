@@ -28,16 +28,23 @@ if ($tipe !== '' && isset(product_types()[$tipe])) {
 } else {
     $tipe = '';
 }
-if ($min > 0) { $where[] = 'p.price >= ?'; $params[] = $min; }
-if ($max > 0) { $where[] = 'p.price <= ?'; $params[] = $max; }
+$eff = eff_price_sql();   // harga yang berlaku saat ini (memperhitungkan flash sale aktif)
+if ($min > 0) { $where[] = $eff . ' >= ?'; $params[] = $min; }
+if ($max > 0) { $where[] = $eff . ' <= ?'; $params[] = $max; }
 if ($demo)    { $where[] = "p.demo_url <> ''"; }
+$flashOnly = !empty($_GET['flash']) && flash_ready();
+if ($flashOnly) { $where[] = flash_active_sql(); }
 
 $orders = [
     'terbaru'  => 'p.created_at DESC',
     'populer'  => 'p.views DESC, p.created_at DESC',
-    'termurah' => 'p.price ASC, p.created_at DESC',
-    'termahal' => 'p.price DESC, p.created_at DESC',
+    'termurah' => $eff . ' ASC, p.created_at DESC',
+    'termahal' => $eff . ' DESC, p.created_at DESC',
 ];
+if ($flashOnly) {
+    $orders['berakhir'] = 'p.flash_end ASC, p.created_at DESC';   // yang paling cepat berakhir tampil dulu
+    if (!isset($_GET['sort'])) $sort = 'berakhir';
+}
 if (!isset($orders[$sort])) $sort = 'terbaru';
 
 $w     = implode(' AND ', $where);
@@ -45,4 +52,4 @@ $total = (int)val('SELECT COUNT(*) ' . product_from_sql() . ' WHERE ' . $w, $par
 $pg    = paginate($total, 12, (int)($_GET['page'] ?? 1));
 $items = rows(product_base_sql() . ' WHERE ' . $w . ' ORDER BY ' . $orders[$sort] . ' LIMIT ' . (int)$pg['per'] . ' OFFSET ' . (int)$pg['offset'], $params);
 
-render('products', compact('items', 'pg', 'q', 'kat', 'catRow', 'tipe', 'sort', 'min', 'max', 'demo', 'total'));
+render('products', compact('items', 'pg', 'q', 'kat', 'catRow', 'tipe', 'sort', 'min', 'max', 'demo', 'total', 'flashOnly'));

@@ -71,6 +71,53 @@
     </div>
   </section>
 
+  <?php if ($flashOk): ?>
+  <section class="panel pad sale-panel" data-sale-form data-now="<?= e($serverNow) ?>">
+    <h2><?= bolt_icon(18) ?> Diskon &amp; Flash Sale <small class="opt">opsional</small></h2>
+
+    <div class="field">
+      <label for="compare_price">Harga coret (Rp)</label>
+      <input id="compare_price" name="compare_price" value="<?= $f['compare_price'] ? e(number_format((float)$f['compare_price'], 0, ',', '.')) : '' ?>" inputmode="numeric" data-money placeholder="Contoh: 500.000">
+      <small>Cukup isi nominal harga lama yang ingin dicoret. Persentase potongan dihitung otomatis dari selisihnya dengan harga jual, dan tampil sebagai “Hemat XX%”. Harus lebih tinggi dari Harga di atas.</small>
+    </div>
+
+    <div class="flash-fields">
+      <h3>Flash sale berbatas waktu</h3>
+      <p class="muted sm">Harga khusus yang otomatis aktif dan berakhir sesuai jadwal, lengkap dengan hitung mundur di kartu dan halaman produk. Waktu mengikuti zona WIB (Asia/Jakarta).</p>
+      <?php if ($product && !empty($product['flash_end']) && (int)$product['flash_price'] > 0 && strtotime((string)$product['flash_end']) <= time()): ?>
+        <div class="alert alert-info">Flash sale sebelumnya sudah berakhir. Ubah harga dan jadwalnya untuk memulai lagi, atau kosongkan isiannya.</div>
+      <?php endif; ?>
+      <div class="field">
+        <label for="flash_price">Harga flash sale (Rp)</label>
+        <input id="flash_price" name="flash_price" value="<?= $f['flash_price'] ? e(number_format((float)$f['flash_price'], 0, ',', '.')) : '' ?>" inputmode="numeric" data-money placeholder="Harus lebih rendah dari harga jual">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="flash_start">Mulai</label>
+          <input id="flash_start" type="datetime-local" name="flash_start" value="<?= e($f['flash_start']) ?>">
+          <small>Kosongkan agar langsung mulai begitu disimpan.</small>
+        </div>
+        <div class="field">
+          <label for="flash_end">Berakhir</label>
+          <input id="flash_end" type="datetime-local" name="flash_end" value="<?= e($f['flash_end']) ?>">
+        </div>
+      </div>
+      <div class="quick" role="group" aria-label="Durasi cepat">
+        <span>Durasi cepat:</span>
+        <?php foreach ([['+1 jam', 60], ['+6 jam', 360], ['+24 jam', 1440], ['+3 hari', 4320], ['+7 hari', 10080]] as $qk): ?>
+          <button type="button" class="btn btn-ghost btn-xs" data-dur="<?= (int)$qk[1] ?>"><?= e($qk[0]) ?></button>
+        <?php endforeach; ?>
+        <button type="button" class="btn btn-ghost btn-xs" data-clear-flash>Hapus flash sale</button>
+      </div>
+    </div>
+
+    <div class="sale-preview" aria-live="polite">
+      <small>Pratinjau tampilan harga</small>
+      <div data-preview-out class="pr pr-detail"></div>
+    </div>
+  </section>
+  <?php endif; ?>
+
   <section class="panel pad">
     <h2>Gambar</h2>
     <div class="field">

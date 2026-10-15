@@ -29,6 +29,16 @@ $cats     = all_categories();
 </head>
 <body>
 <a class="skip" href="#konten">Lewati ke konten</a>
+<?php $fsum = flash_summary(); if ($fsum): ?>
+<div class="flash-bar" role="region" aria-label="Info flash sale">
+  <div class="container flash-bar-in">
+    <span class="fb-ttl"><?= bolt_icon(15) ?> FLASH SALE</span>
+    <span class="fb-txt"><?= num($fsum['n']) ?> produk diskon, berakhir dalam</span>
+    <?= countdown_html($fsum['left'], 'mini', 'Flash sale terdekat berakhir dalam') ?>
+    <a class="fb-link" href="<?= e(url('produk?flash=1')) ?>">Lihat promo &rarr;</a>
+  </div>
+</div>
+<?php endif; ?>
 <header class="site-header">
   <div class="container bar">
     <a class="brand" href="<?= e(url('')) ?>"><?= brand_inner() ?></a>
